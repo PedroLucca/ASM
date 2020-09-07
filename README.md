@@ -3,8 +3,11 @@ Interface Gráfica feita com a biblioteca Tkinter, essencialmente, o projeto tem
 
 Para rodar a aplicação:
   1)Após baixar o projeto, baixar as dependências do arquivo "requirements.txt" com o comando "pip install -r requirements. txt".
+  
   2)Após instalados, modificar o caminhos das pastas "images" e "lines_images" para o caminho específico na sua máquina.
+  
   3)Executar o arquivo "tk.py".
+  
   4)Após a inicialização, abrir o arquivo ".csv" com a opção "Ler Aquivo" no menu "Arquivo" da interface, contido na pasta "formas" do projeto.
 
 Obs: É necessário uma versão de python3 para a instalação dos requerimentos.
