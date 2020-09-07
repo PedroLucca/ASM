@@ -50,10 +50,32 @@ def plot_lines(img, path):
             i += 1
     return image
 
+def plot_lines_align(img, path):
+    contaux = 0
+    i = 0
+    image = cv2.imread(path + img.image) 
+    while i < len(img.pontos):
+        if(contaux == 1):
+            image = add_line_align(image, i, img)
+            i += 1
+            contaux = 0
+        else:
+            contaux = 1
+            i += 1
+    return image
+
 def add_line(image, i, img):
     imageaux = cv2.line(image, tuple(img.pontos[i-1]), tuple(img.pontos[i]), (0, 0, 255), 2)
     if(i!=(len(img.pontos)-1)):
         imageaux = cv2.line(imageaux, tuple(img.pontos[i]), tuple(img.pontos[i + 1]), (0, 0, 255), 2)
     elif(i == (len(img.pontos)-1)):
         imageaux = cv2.line(imageaux, tuple(img.pontos[i]), tuple(img.pontos[0]), (0, 0, 255), 2)
+    return imageaux
+
+def add_line_align(image, i, img):
+    imageaux = cv2.line(image, tuple(img.pontos[i-1]), tuple(img.pontos[i]), (255, 0, 0), 2)
+    if(i!=(len(img.pontos)-1)):
+        imageaux = cv2.line(imageaux, tuple(img.pontos[i]), tuple(img.pontos[i + 1]), (255, 0, 0), 2)
+    elif(i == (len(img.pontos)-1)):
+        imageaux = cv2.line(imageaux, tuple(img.pontos[i]), tuple(img.pontos[0]), (255, 0, 0), 2)
     return imageaux

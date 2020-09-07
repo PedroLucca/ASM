@@ -6,6 +6,7 @@ class Forma:
         self.dimension = 2
         self.forma = []
         self.peso = []
+        self.procrustes = []
 
     def setDados(self, imagem):
         count = 0
@@ -27,6 +28,7 @@ class Forma:
                 self.peso.append(1)
                 self.forma.append(dados)
                 countaux = 1
+        
     
     #def point_distances():
         #equals = Forma()

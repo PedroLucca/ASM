@@ -1,4 +1,6 @@
 from tkinter import *
+from tkinter import ttk
+import os
 from PIL import ImageTk, Image
 import execute
 import functions
@@ -10,11 +12,19 @@ class PdiApp:
         self.atual = 0
         self.path = "C:/Users/Pedro/Documents/PythonPdi/ASM/images/"
         self.path_lines = "C:/Users/Pedro/Documents/PythonPdi/ASM/lines_images/"
+        self.path_proc = "C:/Users/Pedro/Documents/PythonPdi/ASM/proc_image/"
         self.images_lines = []
         self.formas = []
         self.texts = []
+        self.proc_texts = []
+        self.forma_align = []
         self.euclidian_flag = False
+        self.proc_flag = False
         self.pontos_flag = False
+        self.marcador = ""
+        self.e1 = ""
+        self.target_proc = 0
+        self.proc_distancia = 0
 
         menubar = Menu(Pdi)
         Pdi.config(menu=menubar)
@@ -69,10 +79,13 @@ class PdiApp:
             self.next_window = self.canvas.create_window(850, 600, anchor=NW, window=self.next_button)
         
         def show_img(i):
+            self.canvas.delete(self.marcador)
             img = ImageTk.PhotoImage(Image.open(self.path_lines + self.images_lines[self.atual]))
             self.label = Label(image=img)
             self.label.image = img
             self.canvas_image = self.canvas.create_image(80, 0, anchor=NW, image=self.label.image)
+            self.marcador = self.canvas.create_text(300, 655,fill="black",font="Arial 15 bold",
+                        text=str(self.atual+1)+ "/" + str(len(self.formas)), anchor=W)
             if i == 1:
                 buttons()
             
@@ -80,7 +93,7 @@ class PdiApp:
         def Plot():
             self.formas = execute.Plotar(self.path)
             line_images()
-            self.canvas = Canvas(Pdi, width = 1366, height = 700, background="white")  
+            self.canvas = Canvas(Pdi, width = 1366, height = 800, background="white")  
             #canvas.grid(row = 0, column = 2)
             self.canvas.pack()
             show_img(1)
@@ -117,12 +130,67 @@ class PdiApp:
                         text="Ponto " + str(i) +  ": " + str(ponto), anchor=W))
                 i+=1
             self.pontos_flag = True
+
+        def do_proc():
+            if self.e1.get() != "":
+                self.target_proc = int(self.e1.get())
+                #x2 = self.e2.get()
+                if((self.target_proc > 0) and (self.target_proc <= len(self.formas)) and (self.target_proc != (self.atual+1))):
+                    self.nw.destroy()
+                    [distancia, forma_align] = execute.plot_procrustes(self.formas, self.path_lines, self.atual, self.target_proc-1)
+                    openNewImage_proc(distancia, forma_align)
+
+                else:
+                    Label(self.nw,  text ="Valor Inválido! Tente novamente").pack()
+
+        
+        def openNewImage_proc(distancia, alinhado): 
+            self.nw = Toplevel(Pdi) 
+            self.nw.title("PDI - Distância Procrustes")  
+            self.nw.geometry("1200x700") 
+            #text=IntVar()
+            self.canvas_proc = Canvas(self.nw, width = 1366, height = 800, background="white")  
+            self.canvas_proc.pack()
+            img = ImageTk.PhotoImage(Image.open(self.path_proc + "image_procrustes.jpg"))
+            label = Label(image=img)
+            label.image = img
+            self.canvas_image_proc = self.canvas_proc.create_image(80, 0, anchor=NW, image=label.image)
+            self.proc_text = self.canvas_proc.create_text(650, 40,fill="black",font="Arial 15 bold",
+                        text="Procrustes sobre a imagem " + str(self.atual+1) + " em relação a imagem " + str(self.target_proc) + ":", anchor=W)
+            self.proc_text2 = self.canvas_proc.create_text(650, 70,fill="black",font="Arial 12 bold",
+                        text="Distância: " + str(distancia), anchor=W)
+            self.proc_text3 = self.canvas_proc.create_text(650, 100,fill="black",font="Arial 12 bold",
+                        text="Forma alinhada: ", anchor=W)
+            i=0
+            k=90
+            for ponto in alinhado:
+                k += 30
+                self.proc_texts.append(self.canvas_proc.create_text(650, k,fill="black",font="Arial 12 bold",
+                        text="Ponto " + str(i) +  ": " + str(ponto), anchor=W))
+                i+=1
+            self.proc_flag = True
         
 
+        def openNewWindow_proc():
+            self.nw = Toplevel(Pdi) 
+            self.nw.title("Distância Procrustes")  
+            self.nw.geometry("400x100") 
+            #text=IntVar()
+            Label(self.nw,  text ="Digite o número referente da imagem a ser comparada com a atual:").pack()
+            self.e1 = Entry(self.nw)
+            self.e1.pack()
+            button1 = Button(self.nw, text='Calcular a distância', command=do_proc)
+            button1.pack()
+
+
+        def show_procrustes():
+            openNewWindow_proc()
+            
         menu.add_command(label='Ler arquivo', command=Plot)
         menu.add_command(label='Sair', command=Sair)
         menu2.add_command(label='Mostrar coordenadas', command=show_pontos)
         menu2.add_command(label='Distância Euclidiana', command=show_euclidian)
+        menu2.add_command(label='Distância Procrustes', command=show_procrustes)
         
 
 Pdi = Tk()
