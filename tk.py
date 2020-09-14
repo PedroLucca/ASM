@@ -10,9 +10,9 @@ import operations
 class PdiApp:
     def __init__(self, Pdi):
         self.atual = 0
-        self.path = "C:/Users/Pedro/Documents/PythonPdi/ASM/images/"
-        self.path_lines = "C:/Users/Pedro/Documents/PythonPdi/ASM/lines_images/"
-        self.path_proc = "C:/Users/Pedro/Documents/PythonPdi/ASM/proc_image/"
+        self.path = "images/"
+        self.path_lines = "lines_images/"
+        self.path_proc = "proc_image/"
         self.images_lines = []
         self.formas = []
         self.texts = []
@@ -182,6 +182,9 @@ class PdiApp:
             button1 = Button(self.nw, text='Calcular a distância', command=do_proc)
             button1.pack()
 
+        def show_procrustes_generalized():
+            operations.procrustes_generalizada(self.formas)
+
 
         def show_procrustes():
             openNewWindow_proc()
@@ -191,6 +194,7 @@ class PdiApp:
         menu2.add_command(label='Mostrar coordenadas', command=show_pontos)
         menu2.add_command(label='Distância Euclidiana', command=show_euclidian)
         menu2.add_command(label='Distância Procrustes', command=show_procrustes)
+        menu2.add_command(label='Distância Procrustes Generalizada', command=show_procrustes_generalized)
         
 
 Pdi = Tk()

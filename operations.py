@@ -1,5 +1,6 @@
 import cv2
 from PIL import Image
+from sklearn.preprocessing import normalize
 from tkinter import filedialog
 import numpy as np
 import math
@@ -86,11 +87,55 @@ def calcular_peso_procrustes(shapes):
     #self.
     return weights
 
+def calcular_forma_media(formas):
+    i = 0
+    k= 1
+    media = []
+    teste = []
+    while i < (len(formas[0].pontos)):
+        soma = formas[0].pontos[i]
+        while k < (len(formas)):
+            soma += formas[k].pontos[i]
+            k += 1
+            if k == (len(formas)-1):
+                x = np.array(soma)
+                x = x/len(formas)
+                teste.append(x)
+                media.append(soma)
+                
+        i += 1
+        k=1
+    media = np.array(media)
+    media = media/(len(formas))
+    print(teste)
+    print(media)
+    return media
+
 
 def dist_euclidiana(v1, v2):
     v1, v2 = np.array(v1), np.array(v2)
     distance = math.sqrt(((v2[0] - v1[0]) * (v2[0] - v1[0])) + ((v2[1] - v1[1]) * (v2[1] - v1[1])))
     return distance
+
+def normalizar(alvo):
+    m = np.array(alvo/np.linalg.norm(alvo, ord=np.inf, axis=0, keepdims=True))
+    return m
+
+def procrustes_generalizada(formas):
+    alvo = np.array(formas[0].pontos)#Fazer uma copia de uma forma aleatória
+    m = normalizar(alvo)#Atribuir à forma média m o alvo normalizado
+    formasaux = formas#Guardar o valor atual de F
+    for forma in formas:
+        forma.pontos = np.array(forma.pontos)
+        [d, Z, transform] = dist_procrustes(m,forma.pontos)#Alinhar cada forma da lista F com a média m
+        forma.pontos = Z
+    m = np.array(calcular_forma_media(formas))#Atualizar a forma média m
+    [d, Z, transform] = dist_procrustes(alvo, m)#Alinhar forma média m com o alvo
+    m = normalizar(Z)#Normalizar a forma média m
+    return formas, m #Lista de formas F alinhadas e forma média m
+    
+    
+
 
 def dist_procrustes(X, Y, scaling=True, reflection='best'):
 

@@ -15,7 +15,7 @@ def Plotar(path):
     for forma in imagens:
         functions.calc_distance(forma.pontos, forma)
         image = functions.plot_lines(forma, path)
-        cv2.imwrite("C:/Users/Pedro/Documents/PythonPdi/ASM/lines_images/image" + str(i) + ".jpg", image)
+        cv2.imwrite("lines_images/image" + str(i) + ".jpg", image)
         i += 1
     return imagens
 
