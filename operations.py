@@ -88,6 +88,7 @@ def calcular_peso_procrustes(shapes):
     return weights
 
 def calcular_forma_media(formas):
+    media = []
     i = 0
     k= 1
     media = []
@@ -107,8 +108,8 @@ def calcular_forma_media(formas):
         k=1
     media = np.array(media)
     media = media/(len(formas))
-    print(teste)
-    print(media)
+    #print(teste)
+    #print(media)
     return media
 
 
@@ -118,12 +119,15 @@ def dist_euclidiana(v1, v2):
     return distance
 
 def normalizar(alvo):
-    m = np.array(alvo/np.linalg.norm(alvo, ord=np.inf, axis=0, keepdims=True))
-    return m
+    m = []
+    for i in alvo:
+        m.append(i/np.linalg.norm(i, axis=None, keepdims=True))
+    return np.array(m)
 
 def procrustes_generalizada(formas):
-    alvo = np.array(formas[0].pontos)#Fazer uma copia de uma forma aleatória
+    alvo = np.array(formas[1].pontos)#Fazer uma copia de uma forma aleatória
     m = normalizar(alvo)#Atribuir à forma média m o alvo normalizado
+    #print(m)
     formasaux = formas#Guardar o valor atual de F
     for forma in formas:
         forma.pontos = np.array(forma.pontos)
@@ -132,6 +136,7 @@ def procrustes_generalizada(formas):
     m = np.array(calcular_forma_media(formas))#Atualizar a forma média m
     [d, Z, transform] = dist_procrustes(alvo, m)#Alinhar forma média m com o alvo
     m = normalizar(Z)#Normalizar a forma média m
+    print(m)
     return formas, m #Lista de formas F alinhadas e forma média m
     
     

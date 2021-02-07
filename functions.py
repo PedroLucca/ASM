@@ -54,6 +54,7 @@ def plot_lines_align(img, path):
     contaux = 0
     i = 0
     image = cv2.imread(path + img.image) 
+    #print(path + img.image)
     while i < len(img.pontos):
         if(contaux == 1):
             image = add_line_align(image, i, img)

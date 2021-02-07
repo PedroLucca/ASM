@@ -34,6 +34,7 @@ def plot_procrustes(imagens,path,i1,i2):
     #print(procrustesx)
     proc.image = "image"+ str(i1) +".jpg"
     proc.pontos = procrustesx
+    print(path)
     image = functions.plot_lines_align(proc, path)
-    cv2.imwrite("C:/Users/Pedro/Documents/PythonPdi/ASM/proc_image/image_procrustes.jpg", image)
+    cv2.imwrite("proc_image/image_procrustes.jpg", image)
     return d, procrustesx
