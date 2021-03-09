@@ -6,6 +6,11 @@ import numpy as np
 import math
 import scipy.spatial as ss
 import statistics
+from bresenham import bresenham
+import copy
+from sklearn.decomposition import PCA
+import pandas as pd
+import matplotlib.pyplot as plt
 
 #s1 e st seriam arrays com os pontos da forma, o peso seria um array com os pesos gerados na outra função
 def alinhamento(s1,st,peso):
@@ -64,6 +69,7 @@ def trans_similaridade(s1,st,peso):
     s = ax/math.cos(the)
     return (s,the,tx,ty)
 
+
 def calcular_peso_procrustes(shapes):
     numPoints = len(shapes[0].pontos)/shapes[0].dimension
     distances = []
@@ -88,29 +94,11 @@ def calcular_peso_procrustes(shapes):
     return weights
 
 def calcular_forma_media(formas):
-    media = []
-    i = 0
-    k= 1
-    media = []
-    teste = []
-    while i < (len(formas[0].pontos)):
-        soma = formas[0].pontos[i]
-        while k < (len(formas)):
-            soma += formas[k].pontos[i]
-            k += 1
-            if k == (len(formas)-1):
-                x = np.array(soma)
-                x = x/len(formas)
-                teste.append(x)
-                media.append(soma)
-                
-        i += 1
-        k=1
-    media = np.array(media)
-    media = media/(len(formas))
-    #print(teste)
-    #print(media)
-    return media
+    soma = np.zeros((len(formas[0].procrustes_g), 2))
+
+    for forma in formas:
+        soma = soma + np.array(forma.procrustes_g)
+    return (soma/(len(formas)))
 
 
 def dist_euclidiana(v1, v2):
@@ -118,30 +106,192 @@ def dist_euclidiana(v1, v2):
     distance = math.sqrt(((v2[0] - v1[0]) * (v2[0] - v1[0])) + ((v2[1] - v1[1]) * (v2[1] - v1[1])))
     return distance
 
+def arredondar(alvo):
+    i = 0
+    while i < len(alvo):
+        alvo[i][0] = round(alvo[i][0])
+        alvo[i][1] = round(alvo[i][1])
+        i += 1
+    return alvo
+
 def normalizar(alvo):
+    #for i in alvo:
+    #print(alvo)
     m = []
-    for i in alvo:
-        m.append(i/np.linalg.norm(i, axis=None, keepdims=True))
-    return np.array(m)
+    magnitude = np.linalg.norm(alvo, axis=None, keepdims=True)
+    m = (alvo/magnitude)
+    #m = m*magnitude#Multiplicar pelo fator de escala
+
+    return np.array(m), magnitude
+
+def alinhar_formas(formas, m):
+    i = 0
+    while i < len(formas):
+        formas[i].pontos = np.array(formas[i].pontos)
+        [d, Z, transform] = dist_procrustes(m, formas[i].pontos)#Alinhar cada forma da lista F com a média m
+        #formas[i].pontos = arredondar(Z)
+        formas[i].procrustes_g = Z
+        i += 1
+    
+    return formas
 
 def procrustes_generalizada(formas):
-    alvo = np.array(formas[1].pontos)#Fazer uma copia de uma forma aleatória
-    m = normalizar(alvo)#Atribuir à forma média m o alvo normalizado
+    alvo = np.array(formas[0].pontos)#Fazer uma copia de uma forma aleatória
+    m, magnitude = normalizar(alvo)#Atribuir à forma média m o alvo normalizado
     #print(m)
-    formasaux = formas#Guardar o valor atual de F
-    for forma in formas:
-        forma.pontos = np.array(forma.pontos)
-        [d, Z, transform] = dist_procrustes(m,forma.pontos)#Alinhar cada forma da lista F com a média m
-        forma.pontos = Z
-    m = np.array(calcular_forma_media(formas))#Atualizar a forma média m
-    [d, Z, transform] = dist_procrustes(alvo, m)#Alinhar forma média m com o alvo
-    m = normalizar(Z)#Normalizar a forma média m
+    formas_alinhadas = alinhar_formas(formas, m)
+    m = np.array(calcular_forma_media(formas_alinhadas))#Atualizar a forma média m
+    print("\n")
     print(m)
-    return formas, m #Lista de formas F alinhadas e forma média m
+
+    m = dist_procrustes(alvo, m)[1]#Alinhar forma média m com o alvo
+    m = normalizar(m)[0]#Normalizar a forma média m
+    #m = arredondar(m)
+    #print(m)
+    #print(formas_alinhadas[0].pontos)
     
+    return formas_alinhadas, m, magnitude #Lista de formas F alinhadas e forma média m
+
+def amostras_por_ponto(formas):
+    matriz_total = []
+    i = 0
+    #print(len(formas[0].p_derivada_norm[0]))
+    while i < len(formas[0].p_derivada_norm[0]):
+        k = 0
+        matriz_aux = []
+        while k < len(formas):
+            matriz_aux.append(formas[k].p_derivada_norm[0][i])
+            k = k + 1
+        matriz_total.append(matriz_aux)
+        i = i + 1
+    #matriz = np.matrix(matriz_total[0][0][1])
+    #print(matriz_total[0][0])
+    return matriz_total
+
+def pca_amostras(matriz, formas):
+    arrays_formas = []
+    p = 0
+    while p < len(formas[0].p_derivada_norm[0]):
+        array_amostra = []
+        for perfil in matriz[p]:
+            for ponto in perfil:
+                array_amostra.append(list(ponto))
+        arrays_formas.append(array_amostra)
+        p = p + 1
+
+    autovalores = []
+    autovetores = []
+    for array in arrays_formas:
+        pca = PCA()
+        pca.fit(array)
+        autovetores.append(list(pca.components_))
+        autovalores.append(list(pca.explained_variance_))
+
+    print(autovalores)
+    print("\n")
+    print(autovetores)
+
+    return autovalores, autovetores
+
     
+def primeira_derivadada(formas):
+    for forma in formas:
+        for vetor in forma.amostra:
+            #print("\n")
+            i = 0
+            lista_aux = []
+            while i <= (len(vetor) - 1):
+                #print(vetor)
+                if i == (len(vetor) - 1):
+                    lista_aux.append(list(np.array(vetor[i]) - np.array(vetor[0])))
+                    #print(lista_aux)
+                    forma.p_derivada.append(lista_aux)
+                    lista_aux = []
+                else:
+                    #print(np.array(vetor[i]), np.array(vetor[i+1]))
+                    lista_aux.append(list(np.array(vetor[i]) - np.array(vetor[i+1])))
+                i += 1
+        
+        #print("\n\n")
+        #print(forma.p_derivada)
+        #print("\n\n")
+    normalizar_amostras(formas)
+    matriz = amostras_por_ponto(formas)
+    pca_amostras(matriz, formas)
+
+def normalizar_amostras(formas):
+    for forma in formas:
+        lista_aux = []
+        for vetor in forma.p_derivada:
+            print("\n")
+            lista_aux.append(list(normalizar(vetor)[0]))
+        
+        forma.p_derivada_norm.append(lista_aux)
+        #print("\n\n")
+        #print(forma.p_derivada_norm)
+        #print("\n\n")
 
 
+def amostras_textura(formas):
+    for forma in formas:
+        i = 0
+        while i < len(forma.pontos):
+            x1,y1 = forma.pontos[i-1][0], forma.pontos[i-1][1]
+            p1 = (forma.pontos[i-1][0], forma.pontos[i-1][1])
+            x3,y3 = forma.pontos[i][0], forma.pontos[i][1]
+            p3 = (forma.pontos[i][0], forma.pontos[i][1])
+            
+
+            if i == (len(forma.pontos) - 1):
+                p2 = (forma.pontos[0][0], forma.pontos[0][1])
+                x2,y2 = forma.pontos[0][0], forma.pontos[0][1]
+                #print("p3", p3)
+            else:
+                p2 = [forma.pontos[i+1][0], forma.pontos[i+1][1]]
+                x2,y2 = forma.pontos[i+1][0], forma.pontos[i+1][1]
+
+            d = 8
+
+            k = float(((y2-y1) * (x3-x1) - (x2-x1) * (y3-y1)) / ((y2-y1)**2 + (x2-x1)**2))
+            x4 = float(x3 - k * (y2-y1))
+            y4 = float(y3 + k * (x2-x1))
+
+            p4 = [round(x4), round(y4)]
+            #print(p4)
+            #print(line1)
+            
+            diferenca = np.array(p3) - np.array(p4)
+            #print(diferenca)
+
+            p6 = np.array(p3) + diferenca
+            #p4 = np.array(p4) - diferenca
+            #print("P4:", p4)
+            line = list(bresenham(p4[0], p4[1], p6[0], p6[1]))
+            while len(line) <= d:
+                p6 = np.array(p6) + diferenca
+                p4 = np.array(p4) - diferenca
+                #print("P4:", p4)
+                #print("PONTOS:", p3, p4, "\n")
+                line = list(bresenham(p4[0], p4[1], p6[0], p6[1]))
+            #print(line)
+            #ERRADO
+            #print(p1,p3,p2)
+            
+            j = line.index(p3)
+            k = j - int(d/2)
+            j = j + int(d/2)
+            list_aux = []
+
+            while k <= j:
+                list_aux.append(line[k])
+                k += 1
+    
+            forma.amostra.append(list_aux)
+            i += 1
+
+    primeira_derivadada(formas)
+
+ 
 def dist_procrustes(X, Y, scaling=True, reflection='best'):
 
     n,m = X.shape

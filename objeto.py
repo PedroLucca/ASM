@@ -6,7 +6,12 @@ class Forma:
         self.dimension = 2
         self.forma = []
         self.peso = []
-        self.procrustes = []
+        self.procrustes_g = []
+        self.amostra = []
+        self.p_derivada = []
+        self.p_derivada_norm = []
+        self.autovalor = []
+        self.autovetor = []
 
     def setDados(self, imagem):
         count = 0

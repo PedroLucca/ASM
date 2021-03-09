@@ -21,8 +21,10 @@ def Plotar(path):
 
 def plot_procrustes(imagens,path,i1,i2):
     proc = objeto.Forma()
-    x1 = np.array(imagens[i1].pontos)
-    x2 = np.array(imagens[i2].pontos)
+    imagens_aux = imagens
+    #print(imagens[0].pontos)
+    x1 = np.array(imagens_aux[i1].pontos)
+    x2 = np.array(imagens_aux[i2].pontos)
     [d, Z, transform] = operations.dist_procrustes(x1,x2)
     #print(Z)
     procrustesx = []
@@ -34,7 +36,35 @@ def plot_procrustes(imagens,path,i1,i2):
     #print(procrustesx)
     proc.image = "image"+ str(i1) +".jpg"
     proc.pontos = procrustesx
-    print(path)
+    #print(path)
     image = functions.plot_lines_align(proc, path)
     cv2.imwrite("proc_image/image_procrustes.jpg", image)
     return d, procrustesx
+
+def plot_procrustes_generalizada(imagens,path):
+    proc_aux = objeto.Forma()
+    imagens_g = imagens
+    #print("\n\nANTES")
+    #print(imagens[0].pontos)
+    alinhados, m, magnitude = operations.procrustes_generalizada(imagens_g)
+    #print("\n\nDEPOIS")
+    #print(imagens[0].pontos)
+    #print(Z)
+    m = (m*magnitude)#Multiplicando pelo fator de escala
+    #print("\n")
+    #print(magnitude)
+    #print("\n")
+    procrustes_g = []
+    dadoaux = [0,0]
+    for ponto in m:
+        dadoaux[0] = round(ponto[0])
+        dadoaux[1] = round(ponto[1])
+        procrustes_g.append(list(dadoaux))
+    #print(procrustesx)
+    
+    proc_aux.image = "image0.jpg"
+    proc_aux.pontos = procrustes_g
+    #print(path)
+    image = functions.plot_lines_align(proc_aux, path)
+    cv2.imwrite("proc_g_image/image_procrustes_g.jpg", image)
+    return alinhados, procrustes_g
