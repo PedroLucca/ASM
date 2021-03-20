@@ -33,6 +33,7 @@ class Forma:
                 self.peso.append(1)
                 self.forma.append(dados)
                 countaux = 1
+        self.procrustes_g = self.pontos[:]
         
     
     #def point_distances():

@@ -114,6 +114,13 @@ def arredondar(alvo):
         i += 1
     return alvo
 
+def carregar_alvo(formas):
+    alvo = np.array(formas[0].pontos)
+    
+    img = cv2.imread("images/" + formas[0].image, 0)
+    print(img)
+
+
 def normalizar(alvo):
     #for i in alvo:
     #print(alvo)
@@ -127,29 +134,48 @@ def normalizar(alvo):
 def alinhar_formas(formas, m):
     i = 0
     while i < len(formas):
-        formas[i].pontos = np.array(formas[i].pontos)
-        [d, Z, transform] = dist_procrustes(m, formas[i].pontos)#Alinhar cada forma da lista F com a média m
+        pontos = np.array(formas[i].pontos)
+        Z = dist_procrustes(m, pontos)[1]#Alinhar cada forma da lista F com a média m
         #formas[i].pontos = arredondar(Z)
+        #print(Z)
         formas[i].procrustes_g = Z
         i += 1
-    
     return formas
 
-def procrustes_generalizada(formas):
-    alvo = np.array(formas[0].pontos)#Fazer uma copia de uma forma aleatória
-    m, magnitude = normalizar(alvo)#Atribuir à forma média m o alvo normalizado
-    #print(m)
-    formas_alinhadas = alinhar_formas(formas, m)
-    m = np.array(calcular_forma_media(formas_alinhadas))#Atualizar a forma média m
-    print("\n")
-    print(m)
-
-    m = dist_procrustes(alvo, m)[1]#Alinhar forma média m com o alvo
-    m = normalizar(m)[0]#Normalizar a forma média m
-    #m = arredondar(m)
-    #print(m)
-    #print(formas_alinhadas[0].pontos)
+def juntar_pontos(formas):
+    aux_formas = np.array(formas[0].procrustes_g)
+    i = 1
+    while i < len(formas):
+        #print(formas[i].procrustes_g)
+        aux_formas = np.append(aux_formas, formas[i].procrustes_g)
+        i += 1
+    #print(aux_formas)
+    return aux_formas
     
+
+def procrustes_generalizada(formas):
+    alvo = np.array(formas[0].pontos)#1.Fazer uma copia de uma forma aleatória
+    alvo, magnitude = normalizar(alvo)#2.Normalizar a forma alvo, dividindo o vetor pela sua própria magnitude
+    m = alvo #3.Atribuir à forma média m o alvo normalizado
+    forma_inicial = juntar_pontos(formas)#4.Guardar o valor atual de F
+    formas_alinhadas = alinhar_formas(formas, m)#5.Alinhar cada forma da lista F com a média m
+    m = np.array(calcular_forma_media(formas_alinhadas))#6.Atualizar a forma média m
+    m = dist_procrustes(alvo, m)[1]#7.Alinhar forma média m com o alvo
+    m = normalizar(m)[0]#8.Normalizar a forma média m
+    i = 0
+
+    while (np.array_equal(forma_inicial, juntar_pontos(formas)) == False):#9. Se a lista F tiver sofrido alguma mudança durante o processo, ou seja, se F’ != F, voltar ao passo 4.
+        if i == 1000:
+            carregar_alvo(formas)
+            return formas_alinhadas, m, magnitude
+        forma_inicial = juntar_pontos(formas)#4.Guardar o valor atual de F
+        formas_alinhadas = alinhar_formas(formas, m)#5.Alinhar cada forma da lista F com a média m
+        m = np.array(calcular_forma_media(formas_alinhadas))#6.Atualizar a forma média m
+        m = dist_procrustes(alvo, m)[1]#7.Alinhar forma média m com o alvo
+        m = normalizar(m)[0]#8.Normalizar a forma média m
+        i += 1
+
+    #print(m)
     return formas_alinhadas, m, magnitude #Lista de formas F alinhadas e forma média m
 
 def amostras_por_ponto(formas):
@@ -274,7 +300,6 @@ def amostras_textura(formas):
                 #print("PONTOS:", p3, p4, "\n")
                 line = list(bresenham(p4[0], p4[1], p6[0], p6[1]))
             #print(line)
-            #ERRADO
             #print(p1,p3,p2)
             
             j = line.index(p3)
