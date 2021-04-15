@@ -5,6 +5,7 @@ import numpy as np
 import objeto
 import math
 
+
 #arquivo de testes das funções
 def Plotar(path):
     i = 0
@@ -46,11 +47,11 @@ def plot_procrustes_generalizada(imagens,path):
     imagens_g = imagens
     #print("\n\nANTES")
     #print(imagens[0].pontos)
-    alinhados, m, magnitude = operations.procrustes_generalizada(imagens_g)
+    alinhados, m = operations.procrustes_generalizada(imagens_g)
     #print("\n\nDEPOIS")
     #print(imagens[0].pontos)
     #print(Z)
-    m = (m*magnitude)#Multiplicando pelo fator de escala
+    #m = (m*magnitude)#Multiplicando pelo fator de escala
     #print("\n")
     #print(magnitude)
     #print("\n")
@@ -68,3 +69,40 @@ def plot_procrustes_generalizada(imagens,path):
     image = functions.plot_lines_align(proc_aux, path)
     cv2.imwrite("proc_g_image/image_procrustes_g.jpg", image)
     return alinhados, procrustes_g
+
+def plot_amostras(formas, path):
+    i = 0
+    operations.amostras_textura(formas)
+    for forma in formas:
+        nome = "image" + str(i) + ".jpg"
+        image = functions.plot_lines_amostras(forma, nome , path)
+        cv2.imwrite("images_texture/image" + str(i) + ".jpg", image)
+        i += 1
+
+
+def salvar_forma_media(magnitude, m, formas):
+    path = "images/"
+    proc_aux = objeto.Forma()
+    #print("\n\nANTES")
+    #print(imagens[0].pontos)
+    #alinhados, m, magnitude = operations.procrustes_generalizada(imagens_g)
+    #print("\n\nDEPOIS")
+    #print(imagens[0].pontos)
+    #print(Z)
+    m = (m*magnitude)#Multiplicando pelo fator de escala
+    #print("\n")
+    #print(magnitude)
+    #print("\n")
+    procrustes_g = []
+    dadoaux = [0,0]
+    for ponto in m:
+        dadoaux[0] = round(ponto[0])
+        dadoaux[1] = round(ponto[1])
+        procrustes_g.append(list(dadoaux))
+    #print(procrustesx)
+    
+    proc_aux.image = formas[0].image
+    proc_aux.pontos = procrustes_g
+    #print(path)
+    image = functions.plot_lines(proc_aux, path)
+    cv2.imwrite("forma_media/mean_shape.jpg", image)

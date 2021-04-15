@@ -11,6 +11,11 @@ import copy
 from sklearn.decomposition import PCA
 import pandas as pd
 import matplotlib.pyplot as plt
+import execute
+from skimage.io import imshow, imread
+from skimage.color import rgb2hsv, hsv2rgb
+from skimage.color import rgb2gray
+from skimage import util 
 
 #s1 e st seriam arrays com os pontos da forma, o peso seria um array com os pesos gerados na outra função
 def alinhamento(s1,st,peso):
@@ -114,11 +119,61 @@ def arredondar(alvo):
         i += 1
     return alvo
 
-def carregar_alvo(formas):
-    alvo = np.array(formas[0].pontos)
-    
-    img = cv2.imread("images/" + formas[0].image, 0)
-    print(img)
+def save_shape():
+    img = imread('forma_media/mean_shape.jpg')
+    red_filtered = (img[:,:,0] > 180) & (img[:,:,1] < 60) & (img[:,:,2] < 80)
+    plt.figure(num=None, figsize=(8, 6), dpi=80)
+    img_new = img.copy()
+    img_new[:, :, 0] = img_new[:, :, 0] * red_filtered
+    img_new[:, :, 1] = img_new[:, :, 1] * red_filtered
+    img_new[:, :, 2] = img_new[:, :, 2] * red_filtered
+
+    inverted_img = util.invert(img_new)
+    gray = rgb2gray(inverted_img)
+    plt.imsave('forma_media/test.jpg', gray, cmap = plt.cm.gray)
+    #plt.disconnect()
+
+def get_centro_de_massa():
+    img = cv2.imread("forma_media/test.jpg", 0)
+    threshold = 200
+    ret,thresh = cv2.threshold(img,threshold,255,cv2.THRESH_BINARY)
+    height, width = thresh.shape[:2]
+    mass = 0
+    Xcm  = 0.0
+    Ycm  = 0.0
+
+    for i in range(width) :
+        for j in range(height):
+            if not thresh[j][i]:
+                mass += 1
+                Xcm  += i
+                Ycm  += j
+
+    Xcm = Xcm/mass
+    Ycm = Ycm/mass
+
+    return [round(Xcm), round(Ycm)]
+
+def get_center_image(formas):
+    image = cv2.imread('images/' + formas[0].image)
+    (h, w) = image.shape[:2] #w:image-width and h:image-height
+    return [w//2, h//2]
+
+def centralizar_m(m, dif):
+    for ponto in m:
+        ponto += dif
+
+    return m
+
+def aplicacao_parte_1(formas, m, magnitude):
+    execute.salvar_forma_media(magnitude, m, formas)
+    save_shape()
+    mean_center = get_centro_de_massa()
+    center_img = get_center_image(formas)
+    diferenca = (np.array(center_img) - np.array(mean_center))
+    #print(diferenca)
+    m = centralizar_m(m*magnitude, diferenca)
+    return m
 
 
 def normalizar(alvo):
@@ -166,8 +221,8 @@ def procrustes_generalizada(formas):
 
     while (np.array_equal(forma_inicial, juntar_pontos(formas)) == False):#9. Se a lista F tiver sofrido alguma mudança durante o processo, ou seja, se F’ != F, voltar ao passo 4.
         if i == 1000:
-            carregar_alvo(formas)
-            return formas_alinhadas, m, magnitude
+            mean = aplicacao_parte_1(formas, m, magnitude)
+            return formas_alinhadas, mean
         forma_inicial = juntar_pontos(formas)#4.Guardar o valor atual de F
         formas_alinhadas = alinhar_formas(formas, m)#5.Alinhar cada forma da lista F com a média m
         m = np.array(calcular_forma_media(formas_alinhadas))#6.Atualizar a forma média m
@@ -175,8 +230,9 @@ def procrustes_generalizada(formas):
         m = normalizar(m)[0]#8.Normalizar a forma média m
         i += 1
 
+    mean = aplicacao_parte_1(formas, m, magnitude)
     #print(m)
-    return formas_alinhadas, m, magnitude #Lista de formas F alinhadas e forma média m
+    return formas_alinhadas, mean #Lista de formas F alinhadas e forma média m
 
 def amostras_por_ponto(formas):
     matriz_total = []
@@ -213,9 +269,9 @@ def pca_amostras(matriz, formas):
         autovetores.append(list(pca.components_))
         autovalores.append(list(pca.explained_variance_))
 
-    print(autovalores)
-    print("\n")
-    print(autovetores)
+    #print(autovalores)
+    #print("\n")
+    #print(autovetores)
 
     return autovalores, autovetores
 
@@ -249,7 +305,7 @@ def normalizar_amostras(formas):
     for forma in formas:
         lista_aux = []
         for vetor in forma.p_derivada:
-            print("\n")
+            #print("\n")
             lista_aux.append(list(normalizar(vetor)[0]))
         
         forma.p_derivada_norm.append(lista_aux)

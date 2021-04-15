@@ -1,7 +1,7 @@
 import pandas
 import numpy as np
 import objeto
-import operations 
+import operations
 import cv2
 import matplotlib.pyplot as plt
 from tkinter import filedialog
@@ -65,6 +65,14 @@ def plot_lines_align(img, path):
             i += 1
     return image
 
+def plot_lines_amostras(img, name ,path):
+    contaux = 0
+    i = 0
+    image = cv2.imread(path + name) 
+    #print(path + img.image)
+    image = add_line_amostra(image, img) 
+    return image
+
 def add_line(image, i, img):
     imageaux = cv2.line(image, tuple(img.pontos[i-1]), tuple(img.pontos[i]), (0, 0, 255), 2)
     if(i!=(len(img.pontos)-1)):
@@ -79,4 +87,9 @@ def add_line_align(image, i, img):
         imageaux = cv2.line(imageaux, tuple(img.pontos[i]), tuple(img.pontos[i + 1]), (255, 0, 0), 2)
     elif(i == (len(img.pontos)-1)):
         imageaux = cv2.line(imageaux, tuple(img.pontos[i]), tuple(img.pontos[0]), (255, 0, 0), 2)
+    return imageaux
+
+def add_line_amostra(image, forma):
+    for amostra in forma.amostra:
+        imageaux = cv2.line(image, tuple(amostra[0]), tuple(amostra[-1]), (0, 255, 0), 1)
     return imageaux

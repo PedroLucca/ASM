@@ -7,14 +7,17 @@ import functions
 import cv2
 import operations
 import objeto
+import sys
 
 class PdiApp:
     def __init__(self, Pdi):
         self.atual = 0
         self.path = "images/"
         self.path_lines = "lines_images/"
+        self.path_texture = "images_texture/"
         self.path_proc = "proc_image/"
         self.path_proc_g = "proc_g_image/"
+        self.first_amostra = False
         self.images_lines = []
         self.formas = []
         self.texts = []
@@ -26,6 +29,7 @@ class PdiApp:
         self.proc_flag = False
         self.proc_g_flag = False
         self.pontos_flag = False
+        self.amostras_flag = False
         self.marcador = ""
         self.e1 = ""
         self.target_proc = 0
@@ -45,7 +49,8 @@ class PdiApp:
         #Funções
         def Sair():
             Pdi.destroy()
-        
+            sys.exit()
+            
         def line_images():
             i=0
             for forma in self.formas:
@@ -56,21 +61,29 @@ class PdiApp:
             if self.atual < (len(self.formas)-1):
                 self.atual += 1
                 self.canvas.delete(self.canvas_image)
-                show_img(0)
                 if self.euclidian_flag:
+                    show_img(0)
                     show_euclidian()
                 elif self.pontos_flag:
+                    show_img(0)
                     show_pontos()
+                elif self.amostras_flag:
+                    show_img_amostras()
+                    show_amostras()
 
         def back_forma():
             if self.atual > 0:
                 self.atual -= 1
                 self.canvas.delete(self.canvas_image)
-                show_img(0)
                 if self.euclidian_flag:
+                    show_img(0)
                     show_euclidian()
                 elif self.pontos_flag:
+                    show_img(0)
                     show_pontos()
+                elif self.amostras_flag:
+                    show_img_amostras()
+                    show_amostras()
 
 
         def buttons():
@@ -93,6 +106,16 @@ class PdiApp:
                         text=str(self.atual+1)+ "/" + str(len(self.formas)), anchor=W)
             if i == 1:
                 buttons()
+
+        def show_img_amostras():
+            self.canvas.delete(self.marcador)
+            img = ImageTk.PhotoImage(Image.open(self.path_texture + self.images_lines[self.atual]))
+            self.label = Label(image=img)
+            self.label.image = img
+            self.canvas_image = self.canvas.create_image(80, 0, anchor=NW, image=self.label.image)
+            self.marcador = self.canvas.create_text(300, 655,fill="black",font="Arial 15 bold",
+                        text=str(self.atual+1)+ "/" + str(len(self.formas)), anchor=W)
+            
             
 
         def Plot():
@@ -106,6 +129,7 @@ class PdiApp:
 
         def show_euclidian():
             self.pontos_flag = False
+            self.amostras_flag = False
             for text in self.texts:
                 self.canvas.delete(text)
             self.label.text = "Distância Euclidiana entre os pontos:"
@@ -122,6 +146,7 @@ class PdiApp:
         
         def show_pontos():
             self.euclidian_flag = False
+            self.amostras_flag = False
             for text in self.texts:
                 self.canvas.delete(text)
             self.label.text = "Coordenadas dos pontos da face(x,y):"
@@ -135,6 +160,24 @@ class PdiApp:
                         text="Ponto " + str(i) +  ": " + str(ponto), anchor=W))
                 i+=1
             self.pontos_flag = True
+
+        def show_amostras():
+            self.pontos_flag = False
+            self.euclidian_flag = False
+            for text in self.texts:
+                self.canvas.delete(text)
+            self.label.text = "Amostras de textura dos pontos(x,y):"
+            i=0
+            k = 60
+            self.texts.append(self.canvas.create_text(600, 40,fill="black",font="Arial 15 bold",
+                        text=self.label.text, anchor=W))
+            for amostra in self.formas[self.atual].amostra:
+                k += 30
+                self.texts.append(self.canvas.create_text(600, k,fill="black",font="Arial 10 bold",
+                        text="Ponto " + str(i) +  ": " + str(amostra), anchor=W))
+                i+=1
+            self.amostras_flag = True
+            
 
         def do_proc():
             if self.e1.get() != "":
@@ -225,7 +268,14 @@ class PdiApp:
             openNewImage_proc_generalizada(self.forma_align_generalizada)
 
         def show_amostras_textura():
-            operations.amostras_textura(self.formas)
+            if not self.first_amostra:
+                execute.plot_amostras(self.formas, self.path_lines)
+                self.first_amostra = True
+                show_amostras()
+                show_img_amostras()
+            else:
+                show_amostras()
+                show_img_amostras()
 
 
         def show_procrustes():
