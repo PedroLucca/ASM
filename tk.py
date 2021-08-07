@@ -25,6 +25,7 @@ class PdiApp:
         self.proc_g_texts = []
         self.forma_align = []
         self.forma_align_generalizada = []
+        self.amostra_center = []
         self.euclidian_flag = False
         self.proc_flag = False
         self.proc_g_flag = False
@@ -34,6 +35,11 @@ class PdiApp:
         self.e1 = ""
         self.target_proc = 0
         self.proc_distancia = 0
+        self.magnitude = 0
+        self.norm_mean = []
+        self.norm_estimate = []
+        self.autovalores = []
+        self.autovetores = []
 
         menubar = Menu(Pdi)
         Pdi.config(menu=menubar)
@@ -42,9 +48,11 @@ class PdiApp:
 
         menu = Menu(menubar)
         menu2 = Menu(menubar)
+        menu3 = Menu(menubar)
 
         menubar.add_cascade(label='Arquivo', menu=menu)
         menubar.add_cascade(label='Operações', menu=menu2)
+        menubar.add_cascade(label='Busca', menu=menu3)
 
         #Funções
         def Sair():
@@ -70,6 +78,8 @@ class PdiApp:
                 elif self.amostras_flag:
                     show_img_amostras()
                     show_amostras()
+                else:
+                    show_img(1)
 
         def back_forma():
             if self.atual > 0:
@@ -84,6 +94,8 @@ class PdiApp:
                 elif self.amostras_flag:
                     show_img_amostras()
                     show_amostras()
+                else:
+                    show_img(1)
 
 
         def buttons():
@@ -262,14 +274,15 @@ class PdiApp:
             forma_aux = self.formas
             #print("\n\nANTES")
             #print(self.formas[0].pontos)
-            self.formas_alinhadas, self.forma_align_generalizada = execute.plot_procrustes_generalizada(forma_aux, self.path_lines)
+            self.formas_alinhadas, self.forma_align_generalizada, self.norm_estimate, self.norm_mean, self.magnitude = execute.plot_procrustes_generalizada(forma_aux, self.path_lines)
+            self.amostra_center = execute.amostra_forma(self.forma_align_generalizada)
             #print("\n\nDEPOIS")
             #print(self.formas[0].pontos)
             openNewImage_proc_generalizada(self.forma_align_generalizada)
 
         def show_amostras_textura():
             if not self.first_amostra:
-                execute.plot_amostras(self.formas, self.path_lines)
+                self.autovalores, self.autovetores = execute.plot_amostras(self.formas, self.path_lines)
                 self.first_amostra = True
                 show_amostras()
                 show_img_amostras()
@@ -280,6 +293,9 @@ class PdiApp:
 
         def show_procrustes():
             openNewWindow_proc()
+        
+        def show_forma_ajustada():
+            execute.ajuste_de_forma(self.norm_estimate, self.norm_mean, self.magnitude, self.formas, self.autovalores, self.autovetores)
             
         menu.add_command(label='Ler arquivo', command=Plot)
         menu.add_command(label='Sair', command=Sair)
@@ -288,6 +304,7 @@ class PdiApp:
         menu2.add_command(label='Distância Procrustes', command=show_procrustes)
         menu2.add_command(label='Distância Procrustes Generalizada', command=show_procrustes_generalized)
         menu2.add_command(label='Gerar Amostras de Textura', command=show_amostras_textura)
+        menu3.add_command(label='Ajuste de forma', command=show_forma_ajustada)
         
 
 Pdi = Tk()

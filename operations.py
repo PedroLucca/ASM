@@ -7,7 +7,6 @@ import math
 import scipy.spatial as ss
 import statistics
 from bresenham import bresenham
-import copy
 from sklearn.decomposition import PCA
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -18,62 +17,6 @@ from skimage.color import rgb2gray
 from skimage import util 
 
 #s1 e st seriam arrays com os pontos da forma, o peso seria um array com os pesos gerados na outra função
-def alinhamento(s1,st,peso):
-    num = (len(s1)/2)
-    (s,r,tx,ty) = trans_similaridade(s1,st,peso)
-    #print((math.cos(r)))
-    new = []
-    for i in st:
-        new.append(0)
-    k = 0
-    while k < num:
-        new[2*k]   = ((st[2*k]*(math.cos(r)) - st[2*k+1]*(math.sin(r)))*s) + tx
-        new[2*k+1] = ((st[2*k]*(math.sin(r)) + st[2*k+1]*(math.cos(r)))*s) + ty
-        k += 1
-    return new
-
-def trans_similaridade(s1,st,peso):
-    num = (len(s1)/2)
-    X1 = 0.0 
-    Y1 = 0.0
-    X2 = 0.0
-    Y2 = 0.0
-    W = 0.0
-    Z = 0.0
-    C1 = 0.0
-    C2 = 0.0
-    k=0
-
-    while k < num:
-        X1  += peso[k] * s1[2*k]
-        Y1  += peso[k] * s1[2*k + 1]
-        X2  += peso[k] * st[2*k]
-        Y2  += peso[k] * st[2*k + 1]
-        Z   += peso[k] * (st[2*k] * st[2*k] + st[2*k + 1] * st[2*k + 1])
-        W   += peso[k]
-        C1  += peso[k] * (s1[2*k] * st[2*k] + s1[2*k + 1] * st[2*k + 1])
-        C2  += peso[k] * (s1[2*k + 1] * st[2*k] - s1[2*k] * st[2*k + 1])
-        k += 1
-      
-    K0 = X2 * X2 + Y2 * Y2
-    K1 = -Y2 * W
-    K2 = X2 * W
-    K3 = X2 * Y1 - X1 * Y2
-    K4 = -X2 * Z
-    K5 = X2 * Y2
-    K6 = Y2*Y2 - W*Z
-    K7 = C1*Y2 - Y1*Z
-        
-    ty = (X2 * C2 - Y1 * Z + Y2 * C1)/(X2 * X2 - W * Z + Y2 * Y2)
-    tx = (K0*K7 - K3*K4 - ty * (K0 * K6 - K2 * K4))/(K0 * K5 - K1 * K4)
-
-    ay = (K3 - tx * K1 - ty * K2)/K0
-    ax = (X1 + ay*Y2 - tx*W)/X2
-
-    the = math.atan2(ay,ax)
-    s = ax/math.cos(the)
-    return (s,the,tx,ty)
-
 
 def calcular_peso_procrustes(shapes):
     numPoints = len(shapes[0].pontos)/shapes[0].dimension
@@ -222,7 +165,7 @@ def procrustes_generalizada(formas):
     while (np.array_equal(forma_inicial, juntar_pontos(formas)) == False):#9. Se a lista F tiver sofrido alguma mudança durante o processo, ou seja, se F’ != F, voltar ao passo 4.
         if i == 1000:
             mean = aplicacao_parte_1(formas, m, magnitude)
-            return formas_alinhadas, mean
+            return formas_alinhadas, mean , m, magnitude
         forma_inicial = juntar_pontos(formas)#4.Guardar o valor atual de F
         formas_alinhadas = alinhar_formas(formas, m)#5.Alinhar cada forma da lista F com a média m
         m = np.array(calcular_forma_media(formas_alinhadas))#6.Atualizar a forma média m
@@ -231,8 +174,7 @@ def procrustes_generalizada(formas):
         i += 1
 
     mean = aplicacao_parte_1(formas, m, magnitude)
-    #print(m)
-    return formas_alinhadas, mean #Lista de formas F alinhadas e forma média m
+    return formas_alinhadas, mean , m, magnitude #Lista de formas F alinhadas e forma média m
 
 def amostras_por_ponto(formas):
     matriz_total = []
@@ -252,6 +194,7 @@ def amostras_por_ponto(formas):
 
 def pca_amostras(matriz, formas):
     arrays_formas = []
+
     p = 0
     while p < len(formas[0].p_derivada_norm[0]):
         array_amostra = []
@@ -265,14 +208,21 @@ def pca_amostras(matriz, formas):
     autovetores = []
     for array in arrays_formas:
         pca = PCA()
-        pca.fit(array)
+        array_aux = (np.array(array)).reshape(len(array)*2, 1)
+        pca.fit(array_aux)
+        print(array_aux.shape)
+        #print(array)
         autovetores.append(list(pca.components_))
         autovalores.append(list(pca.explained_variance_))
+        #autovetores.append(list(pca.components_))
+        #autovalores.append(list(pca.explained_variance_))
 
-    #print(autovalores)
+    #print(np.array(autovalores).shape)
     #print("\n")
-    #print(autovetores)
-
+    #print(np.array(autovetores).shape)
+    print(len(autovetores))
+    print(autovalores)
+    print("passou")
     return autovalores, autovetores
 
     
@@ -299,7 +249,8 @@ def primeira_derivadada(formas):
         #print("\n\n")
     normalizar_amostras(formas)
     matriz = amostras_por_ponto(formas)
-    pca_amostras(matriz, formas)
+    autovalores, autovetores = pca_amostras(matriz, formas)
+    return autovalores, autovetores
 
 def normalizar_amostras(formas):
     for forma in formas:
@@ -310,11 +261,11 @@ def normalizar_amostras(formas):
         
         forma.p_derivada_norm.append(lista_aux)
         #print("\n\n")
-        #print(forma.p_derivada_norm)
+        #print(forma.p_derivada)
         #print("\n\n")
 
 
-def amostras_textura(formas):
+def amostras_textura(formas, d):
     for forma in formas:
         i = 0
         while i < len(forma.pontos):
@@ -331,8 +282,6 @@ def amostras_textura(formas):
             else:
                 p2 = [forma.pontos[i+1][0], forma.pontos[i+1][1]]
                 x2,y2 = forma.pontos[i+1][0], forma.pontos[i+1][1]
-
-            d = 8
 
             k = float(((y2-y1) * (x3-x1) - (x2-x1) * (y3-y1)) / ((y2-y1)**2 + (x2-x1)**2))
             x4 = float(x3 - k * (y2-y1))
@@ -370,7 +319,126 @@ def amostras_textura(formas):
             forma.amostra.append(list_aux)
             i += 1
 
-    primeira_derivadada(formas)
+    autovalores, autovetores = primeira_derivadada(formas)
+
+    return autovalores, autovetores
+
+def amostra_forma(forma, d):
+    i = 0
+    amostra_centralizada = []
+    while i < len(forma):
+        x1,y1 = forma[i-1][0], forma[i-1][1]
+        p1 = (forma[i-1][0], forma[i-1][1])
+        x3,y3 = forma[i][0], forma[i][1]
+        p3 = (forma[i][0], forma[i][1])
+        #print(i)
+        if i == (len(forma) - 1):
+            p2 = (forma[0][0], forma[0][1])
+            x2,y2 = forma[0][0], forma[0][1]
+            #print("p3", p3)
+        else:
+            p2 = [forma[i+1][0], forma[i+1][1]]
+            x2,y2 = forma[i+1][0], forma[i+1][1]
+
+        k = float(((y2-y1) * (x3-x1) - (x2-x1) * (y3-y1)) / ((y2-y1)**2 + (x2-x1)**2))
+        x4 = float(x3 - k * (y2-y1))
+        y4 = float(y3 + k * (x2-x1))
+
+        p4 = [round(x4), round(y4)]
+        #print(p4)
+        #print(line1)
+        
+        diferenca = np.array(p3) - np.array(p4)
+        #print(diferenca)
+
+        p6 = np.array(p3) + diferenca
+        #p4 = np.array(p4) - diferenca
+        #print("P4:", p4)
+        line = list(bresenham(p4[0], p4[1], p6[0], p6[1]))
+        while len(line) <= d:
+            p6 = np.array(p6) + diferenca
+            p4 = np.array(p4) - diferenca
+            #print("P4:", p4)
+            #print("PONTOS:", p3, p4, "\n")
+            line = list(bresenham(p4[0], p4[1], p6[0], p6[1]))
+        #print(line)
+        #print(p1,p3,p2)
+        
+        j = line.index(p3)
+        k = j - int(d/2)
+        j = j + int(d/2)
+        list_aux = []
+
+        while k <= j:
+            list_aux.append(line[k])
+            k += 1
+
+        amostra_centralizada.append(list_aux)
+        i += 1
+
+    #print(forma)
+    #print("\n\n")
+    #print(amostra_centralizada)
+
+    return amostra_centralizada
+
+def ajuste_forma(estimativa, forma_media, magnitude, formas, autovalores, autovetores):
+    #passo 1
+    m = dist_procrustes(estimativa, forma_media)[1]
+    #print(m)
+    #print('\n\n')
+    #print(estimativa)
+    #passo 2
+    autovetores = np.array(autovetores)
+    autovalores = np.array(autovalores)
+    print(len(autovalores))
+    #print(autovetores)
+    #print("\n\n")
+    #print(autovetores.reshape(len(autovetores), 1))
+    
+    res_diff = np.array(m - forma_media)
+    print("PRINTANDO DIFF:")
+    print(res_diff)
+    #print(res_diff.shape)
+    
+    b = autovetores*res_diff#Precisa mesmo ser a transposta?? Algo a ser testado.
+    b = np.array(b)
+    print("PRINTANDO B:\n")
+    print(autovalores.shape)
+    print(res_diff.shape)
+    print(autovalores.shape)
+    print(b.shape)
+    print(b)
+    print("CABOU")
+    #b = (m - forma_media)
+    #print(autovalores)
+    #passo 3
+    k = 0
+    peso = b[0] #OBS: solução temporária enquanto não se resolve o problema
+    for i in autovalores:
+        i = float(i[0])
+        result = 3*math.sqrt(i)
+        for j in peso:
+            print("J",j)
+            #print(abs(j))
+            if abs(j[0]) >= result:
+                j[0] = result
+            if abs(j[1]) >= result:
+                j[1] = result
+        #k += 1
+    
+    print(b.shape)
+    #passo 4
+    x_c = forma_media + (autovalores*b)
+    forma_corrigida = x_c[0]
+    print("FORMA CORRIGIDA:")
+    print(x_c[0])
+    forma_ajustada = dist_procrustes(forma_corrigida, estimativa)[1]
+    resultado_final = forma_ajustada*magnitude #Não estou fazendo com a inversa, algo a ser testado ainda
+    print("RESULTADO FINAL:")
+    print(resultado_final)
+    return m
+
 
  
 def dist_procrustes(X, Y, scaling=True, reflection='best'):

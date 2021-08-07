@@ -47,7 +47,7 @@ def plot_procrustes_generalizada(imagens,path):
     imagens_g = imagens
     #print("\n\nANTES")
     #print(imagens[0].pontos)
-    alinhados, m = operations.procrustes_generalizada(imagens_g)
+    alinhados, mean, m, magnitude = operations.procrustes_generalizada(imagens_g)
     #print("\n\nDEPOIS")
     #print(imagens[0].pontos)
     #print(Z)
@@ -57,27 +57,30 @@ def plot_procrustes_generalizada(imagens,path):
     #print("\n")
     procrustes_g = []
     dadoaux = [0,0]
-    for ponto in m:
+    for ponto in mean:
         dadoaux[0] = round(ponto[0])
         dadoaux[1] = round(ponto[1])
         procrustes_g.append(list(dadoaux))
     #print(procrustesx)
+    mean = mean/magnitude
     
     proc_aux.image = "image0.jpg"
     proc_aux.pontos = procrustes_g
     #print(path)
     image = functions.plot_lines_align(proc_aux, path)
     cv2.imwrite("proc_g_image/image_procrustes_g.jpg", image)
-    return alinhados, procrustes_g
+    return alinhados, procrustes_g, mean, m, magnitude
 
 def plot_amostras(formas, path):
     i = 0
-    operations.amostras_textura(formas)
+    autovalores, autovetores = operations.amostras_textura(formas, 8)
     for forma in formas:
         nome = "image" + str(i) + ".jpg"
         image = functions.plot_lines_amostras(forma, nome , path)
         cv2.imwrite("images_texture/image" + str(i) + ".jpg", image)
         i += 1
+
+    return autovalores, autovetores
 
 
 def salvar_forma_media(magnitude, m, formas):
@@ -106,3 +109,10 @@ def salvar_forma_media(magnitude, m, formas):
     #print(path)
     image = functions.plot_lines(proc_aux, path)
     cv2.imwrite("forma_media/mean_shape.jpg", image)
+
+def amostra_forma(m):
+        amostra = operations.amostra_forma(m, 10)
+        return amostra
+
+def ajuste_de_forma(estimativa, forma_media, magnitude, formas, autovalores, autovetores):
+    operations.ajuste_forma(estimativa, forma_media, magnitude, formas, autovalores, autovetores)
