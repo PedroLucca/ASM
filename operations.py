@@ -384,13 +384,15 @@ def amostra_forma(forma, d):
 
 def ajuste_forma(estimativa, forma_media, magnitude, formas, autovalores, autovetores):
     #passo 1
+    autovetores = np.array(autovetores)
+    autovalores = np.array(autovalores)
+    print("AUTOVAL", autovalores.shape)
+    print("AUTOVET", autovetores.shape)
     m = dist_procrustes(estimativa, forma_media)[1]
     #print(m)
     #print('\n\n')
     #print(estimativa)
     #passo 2
-    autovetores = np.array(autovetores)
-    autovalores = np.array(autovalores)
     print(len(autovalores))
     #print(autovetores)
     #print("\n\n")

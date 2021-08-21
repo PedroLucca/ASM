@@ -282,13 +282,28 @@ class PdiApp:
 
         def show_amostras_textura():
             if not self.first_amostra:
-                self.autovalores, self.autovetores = execute.plot_amostras(self.formas, self.path_lines)
+                #MUDAR
+                self.tw = Toplevel(Pdi) 
+                self.tw.title("Amostras de textura")  
+                self.tw.geometry("400x100") 
+                Label(self.tw,  text ="Digite o valor do parâmetro da textura:").pack()
+                self.e2 = Entry(self.tw)
+                self.e2.pack()
+                button2 = Button(self.tw, text='Gerar amostras', command=do_texturas)
+                button2.pack()
+            else:
+                show_amostras()
+                show_img_amostras()
+
+        def do_texturas():
+            if self.e2.get() != "":
+                self.autovalores, self.autovetores = execute.plot_amostras(self.formas, self.path_lines, int(self.e2.get()))
+                self.tw.destroy()
                 self.first_amostra = True
                 show_amostras()
                 show_img_amostras()
             else:
-                show_amostras()
-                show_img_amostras()
+                Label(self.tw,  text ="Valor Inválido! Tente novamente").pack()
 
 
         def show_procrustes():

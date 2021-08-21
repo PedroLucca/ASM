@@ -71,9 +71,9 @@ def plot_procrustes_generalizada(imagens,path):
     cv2.imwrite("proc_g_image/image_procrustes_g.jpg", image)
     return alinhados, procrustes_g, mean, m, magnitude
 
-def plot_amostras(formas, path):
+def plot_amostras(formas, path, d):
     i = 0
-    autovalores, autovetores = operations.amostras_textura(formas, 8)
+    autovalores, autovetores = operations.amostras_textura(formas, d)
     for forma in formas:
         nome = "image" + str(i) + ".jpg"
         image = functions.plot_lines_amostras(forma, nome , path)
