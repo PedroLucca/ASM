@@ -47,7 +47,7 @@ def plot_procrustes_generalizada(imagens,path):
     imagens_g = imagens
     #print("\n\nANTES")
     #print(imagens[0].pontos)
-    alinhados, mean, m, magnitude = operations.procrustes_generalizada(imagens_g)
+    alinhados, mean, m, magnitude, form_autovetores, form_autovalores = operations.procrustes_generalizada(imagens_g)
     #print("\n\nDEPOIS")
     #print(imagens[0].pontos)
     #print(Z)
@@ -69,7 +69,7 @@ def plot_procrustes_generalizada(imagens,path):
     #print(path)
     image = functions.plot_lines_align(proc_aux, path)
     cv2.imwrite("proc_g_image/image_procrustes_g.jpg", image)
-    return alinhados, procrustes_g, mean, m, magnitude
+    return alinhados, procrustes_g, mean, m, magnitude, form_autovetores, form_autovalores
 
 def plot_amostras(formas, path, d):
     i = 0
@@ -115,4 +115,21 @@ def amostra_forma(m):
         return amostra
 
 def ajuste_de_forma(estimativa, forma_media, magnitude, formas, autovalores, autovetores):
-    operations.ajuste_forma(estimativa, forma_media, magnitude, formas, autovalores, autovetores)
+    path = "images/"
+    resultado_aux = objeto.Forma()
+
+    forma_resultante = operations.ajuste_forma(estimativa, forma_media, magnitude, formas, autovalores, autovetores)
+    resultado = []
+    dadoaux = [0,0]
+    for ponto in forma_resultante:
+        dadoaux[0] = round(ponto[0])
+        dadoaux[1] = round(ponto[1])
+        resultado.append(list(dadoaux))
+    
+    resultado_aux.image = formas[0].image
+    resultado_aux.pontos = resultado
+
+    image = functions.plot_lines_align(resultado_aux, path)
+    cv2.imwrite("resultado_asm/resultado.jpg", image)
+
+    return resultado

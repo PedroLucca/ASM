@@ -6,6 +6,7 @@ import numpy as np
 import math
 import scipy.spatial as ss
 import statistics
+import objeto
 from bresenham import bresenham
 from sklearn.decomposition import PCA
 import pandas as pd
@@ -16,30 +17,6 @@ from skimage.color import rgb2hsv, hsv2rgb
 from skimage.color import rgb2gray
 from skimage import util 
 
-#s1 e st seriam arrays com os pontos da forma, o peso seria um array com os pesos gerados na outra função
-
-def calcular_peso_procrustes(shapes):
-    numPoints = len(shapes[0].pontos)/shapes[0].dimension
-    distances = []
-
-    for i in range(0,len(shapes)):
-        distances.append(shapes[i].pointsDistances())
-
-    mean = statistics.mean(distances)
-    squares = []
-
-    for i in range(0,len(distances)):
-        dif = distances[i] - mean
-        squares.append(dif * dif)
-
-    div = (1.0/len(shapes))
-    soma = sum(squares)
-    variance = statistics.variance(sum, div)
-    weights = []
-    #for i in range(0, variance.height):#falta entender
-       # weights.append(1.0/variance.lineSum(line: i)!)
-    #self.
-    return weights
 
 def calcular_forma_media(formas):
     soma = np.zeros((len(formas[0].procrustes_g), 2))
@@ -149,6 +126,27 @@ def juntar_pontos(formas):
         i += 1
     #print(aux_formas)
     return aux_formas
+
+def formas_para_matriz(formas):
+    matriz = []
+    for forma in formas:
+        for ponto in forma.procrustes_g:
+            matriz.append(ponto)
+    
+    matriz = np.array(matriz)
+
+    return matriz
+
+def PCA_formas(matriz):
+    pca = PCA()
+    pca.fit(matriz)
+    #print("AUTOVETORES:")
+    #print(pca.components_)
+    #print("AUTOVALORES:")
+    #print(pca.explained_variance_)
+
+    return pca.components_, pca.explained_variance_
+
     
 
 def procrustes_generalizada(formas):
@@ -164,8 +162,15 @@ def procrustes_generalizada(formas):
 
     while (np.array_equal(forma_inicial, juntar_pontos(formas)) == False):#9. Se a lista F tiver sofrido alguma mudança durante o processo, ou seja, se F’ != F, voltar ao passo 4.
         if i == 1000:
+            mat_formas = formas_para_matriz(formas)
+            #print("FORMAS ALINHADAS:")
+            #for forma in formas_alinhadas:
+                #print("\n", forma.procrustes_g)
+            #print("MATRIZ:", len(mat_formas))
+            #print(mat_formas)
+            form_autovetores, form_autovalores = PCA_formas(mat_formas)
             mean = aplicacao_parte_1(formas, m, magnitude)
-            return formas_alinhadas, mean , m, magnitude
+            return formas_alinhadas, mean , m, magnitude, form_autovetores, form_autovalores
         forma_inicial = juntar_pontos(formas)#4.Guardar o valor atual de F
         formas_alinhadas = alinhar_formas(formas, m)#5.Alinhar cada forma da lista F com a média m
         m = np.array(calcular_forma_media(formas_alinhadas))#6.Atualizar a forma média m
@@ -210,7 +215,7 @@ def pca_amostras(matriz, formas):
         pca = PCA()
         array_aux = (np.array(array)).reshape(len(array)*2, 1)
         pca.fit(array_aux)
-        print(array_aux.shape)
+        #print(array_aux.shape)
         #print(array)
         autovetores.append(list(pca.components_))
         autovalores.append(list(pca.explained_variance_))
@@ -220,13 +225,106 @@ def pca_amostras(matriz, formas):
     #print(np.array(autovalores).shape)
     #print("\n")
     #print(np.array(autovetores).shape)
-    print(len(autovetores))
-    print(autovalores)
-    print("passou")
+    #print(len(autovetores))
+    #print(autovalores)
+    #print("passou")
     return autovalores, autovetores
+
+def pca_amostras_texturas(matriz, formas):
+    arrays_formas = []
+
+    p = 0
+    #while p < len(formas[0].p_derivada_norm[0]):
+        #array_amostra = []
+        #for perfil in matriz[p]:
+            #for ponto in perfil:
+                #array_amostra.append(ponto)
+        #arrays_formas.append(array_amostra)
+        #p = p + 1
+
+    autovalores = []
+    autovetores = []
+    #print("LEN DA MATRIZ:", len(matriz))
+    for perfil in matriz:
+        pca = PCA()
+        #array_aux = (np.array(array)).reshape(len(array)*2, 1)
+        pca.fit(perfil)
+        #print(array_aux.shape)
+        #print(array)
+        autovetores.append(list(pca.components_))
+        autovalores.append(list(pca.explained_variance_))
+        #autovetores.append(list(pca.components_))
+        #autovalores.append(list(pca.explained_variance_))
+
+    #print(np.array(autovalores).shape)
+    #print("\n")
+    #print(np.array(autovetores).shape)
+    #print(len(autovetores))
+    #print(autovalores)
+    #print("passou")
+    return autovalores, autovetores
+
+def primeira_derivada_texturas(forms):
+    for forma in forms:
+        for vetor in forma.amostra:
+            #print("\n")
+            i = 0
+            lista_aux = []
+            while i <= (len(vetor) - 1):
+                #print(vetor)
+                if i == (len(vetor) - 1):
+                    lista_aux.append(vetor[i] - vetor[0])
+                    #print(lista_aux)
+                    forma.p_derivada.append(lista_aux)
+                    lista_aux = []
+                else:
+                    #print(np.array(vetor[i]), np.array(vetor[i+1]))
+                    lista_aux.append(vetor[i] - vetor[i+1])
+                i += 1
 
     
 def primeira_derivadada(formas):
+    formas_aux = []
+    vetor_aux = []
+    i=0
+    for forma in formas:
+        forma_aux = objeto.Forma()
+        forma_aux.pontos = forma.pontos
+        img  = cv2.imread("images/" + forma.image, 0)
+        img = np.array(img)
+        for vetor in forma.amostra:
+            for ponto in vetor:
+                ponto_aux = img[ponto[1]][ponto[0]]
+                #print(ponto_aux)
+                #print("SHAPE", img.shape)
+                vetor_aux.append(ponto_aux)
+            forma_aux.amostra.append(vetor_aux)
+            vetor_aux = []
+        #print(forma_aux.amostra)
+        formas_aux.append(forma_aux)
+        i = i + 1
+
+    primeira_derivada_texturas(formas_aux)
+
+    print("AMOSTRA PRIMEIRA:")
+    print(formas_aux[0].p_derivada)
+
+    normalizar_amostras_textura(formas_aux)
+
+    print("AMOSTRA PRIMEIRA NORMALIZADA:")
+    print(np.array(formas_aux[0].p_derivada_norm))
+
+    print("AMOSTRA PRIMEIRA NORMALIZADA:")
+    print(formas_aux[0].p_derivada_norm)
+
+    print("MATRIZ TOTAL:")
+    texturas_matriz = np.array(amostras_por_ponto(formas_aux))
+    print(texturas_matriz)
+
+    print("AUTOVETORES E AUTOVALORES:")
+    text_autovalores, text_autovetores = pca_amostras_texturas(texturas_matriz, formas_aux)
+    print(text_autovalores, text_autovetores)
+
     for forma in formas:
         for vetor in forma.amostra:
             #print("\n")
@@ -260,6 +358,18 @@ def normalizar_amostras(formas):
             lista_aux.append(list(normalizar(vetor)[0]))
         
         forma.p_derivada_norm.append(lista_aux)
+        #print("\n\n")
+        #print(forma.p_derivada)
+        #print("\n\n")
+
+def normalizar_amostras_textura(formas):
+    for forma in formas:
+        lista_aux = []
+        for vetor in forma.p_derivada:
+            #print("\n")
+            lista_aux.append(normalizar(vetor)[0])
+        
+        forma.p_derivada_norm.append(np.array(lista_aux))
         #print("\n\n")
         #print(forma.p_derivada)
         #print("\n\n")
@@ -438,8 +548,9 @@ def ajuste_forma(estimativa, forma_media, magnitude, formas, autovalores, autove
     forma_ajustada = dist_procrustes(forma_corrigida, estimativa)[1]
     resultado_final = forma_ajustada*magnitude #Não estou fazendo com a inversa, algo a ser testado ainda
     print("RESULTADO FINAL:")
+    #resultado_final = arredondar(resultado_final)
     print(resultado_final)
-    return m
+    return resultado_final
 
 
  
