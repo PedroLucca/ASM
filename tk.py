@@ -278,7 +278,7 @@ class PdiApp:
             forma_aux = self.formas
             #print("\n\nANTES")
             #print(self.formas[0].pontos)
-            self.formas_alinhadas, self.forma_align_generalizada, self.norm_estimate, self.norm_mean, self.magnitude, self.form_autovetores, self.autovalores = execute.plot_procrustes_generalizada(forma_aux, self.path_lines)
+            self.formas_alinhadas, self.forma_align_generalizada, self.norm_estimate, self.norm_mean, self.magnitude, self.form_autovetores, self.form_autovalores = execute.plot_procrustes_generalizada(forma_aux, self.path_lines)
             self.amostra_center = execute.amostra_forma(self.forma_align_generalizada)
             #print("\n\nDEPOIS")
             #print(self.formas[0].pontos)
@@ -314,7 +314,7 @@ class PdiApp:
             openNewWindow_proc()
         
         def show_forma_ajustada():
-            execute.ajuste_de_forma(self.norm_estimate, self.norm_mean, self.magnitude, self.formas, self.autovalores, self.autovetores)
+            execute.ajuste_de_forma(self.norm_estimate, self.norm_mean, self.magnitude, self.formas, self.form_autovalores, self.form_autovetores)
             
             
         menu.add_command(label='Ler arquivo', command=Plot)

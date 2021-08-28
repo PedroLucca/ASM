@@ -158,6 +158,7 @@ def procrustes_generalizada(formas):
     m = np.array(calcular_forma_media(formas_alinhadas))#6.Atualizar a forma média m
     m = dist_procrustes(alvo, m)[1]#7.Alinhar forma média m com o alvo
     m = normalizar(m)[0]#8.Normalizar a forma média m
+    
     i = 0
 
     while (np.array_equal(forma_inicial, juntar_pontos(formas)) == False):#9. Se a lista F tiver sofrido alguma mudança durante o processo, ou seja, se F’ != F, voltar ao passo 4.
@@ -178,8 +179,10 @@ def procrustes_generalizada(formas):
         m = normalizar(m)[0]#8.Normalizar a forma média m
         i += 1
 
+    mat_formas = formas_para_matriz(formas)
+    form_autovetores, form_autovalores = PCA_formas(mat_formas)
     mean = aplicacao_parte_1(formas, m, magnitude)
-    return formas_alinhadas, mean , m, magnitude #Lista de formas F alinhadas e forma média m
+    return formas_alinhadas, mean , m, magnitude, form_autovetores, form_autovalores #Lista de formas F alinhadas e forma média m
 
 def amostras_por_ponto(formas):
     matriz_total = []
@@ -496,8 +499,8 @@ def ajuste_forma(estimativa, forma_media, magnitude, formas, autovalores, autove
     #passo 1
     autovetores = np.array(autovetores)
     autovalores = np.array(autovalores)
-    print("AUTOVAL", autovalores.shape)
-    print("AUTOVET", autovetores.shape)
+    print("AUTOVAL", autovalores)
+    print("AUTOVET", autovetores)
     m = dist_procrustes(estimativa, forma_media)[1]
     #print(m)
     #print('\n\n')
@@ -513,10 +516,10 @@ def ajuste_forma(estimativa, forma_media, magnitude, formas, autovalores, autove
     print(res_diff)
     #print(res_diff.shape)
     
-    b = autovetores*res_diff#Precisa mesmo ser a transposta?? Algo a ser testado.
+    b = autovetores.T[1]*res_diff#Precisa mesmo ser a transposta?? Algo a ser testado.
     b = np.array(b)
     print("PRINTANDO B:\n")
-    print(autovalores.shape)
+    print(autovalores)
     print(res_diff.shape)
     print(autovalores.shape)
     print(b.shape)
@@ -526,25 +529,26 @@ def ajuste_forma(estimativa, forma_media, magnitude, formas, autovalores, autove
     #print(autovalores)
     #passo 3
     k = 0
-    peso = b[0] #OBS: solução temporária enquanto não se resolve o problema
-    for i in autovalores:
-        i = float(i[0])
-        result = 3*math.sqrt(i)
-        for j in peso:
-            print("J",j)
-            #print(abs(j))
-            if abs(j[0]) >= result:
-                j[0] = result
-            if abs(j[1]) >= result:
-                j[1] = result
+    peso = b #OBS: solução temporária enquanto não se resolve o problema
+    #for i in autovalores:
+        #i = float(i)
+    result1 = 3*math.sqrt(autovalores[0])
+    result2 = 3*math.sqrt(autovalores[1])
+    for j in peso:
+        print("J",j)
+        #print(abs(j))
+        if abs(j[0]) >= result1:
+            j[0] = result1
+        if abs(j[1]) >= result2:
+            j[1] = result2
         #k += 1
     
     print(b.shape)
     #passo 4
     x_c = forma_media + (autovalores*b)
-    forma_corrigida = x_c[0]
+    forma_corrigida = x_c
     print("FORMA CORRIGIDA:")
-    print(x_c[0])
+    print(x_c)
     forma_ajustada = dist_procrustes(forma_corrigida, estimativa)[1]
     resultado_final = forma_ajustada*magnitude #Não estou fazendo com a inversa, algo a ser testado ainda
     print("RESULTADO FINAL:")
