@@ -188,11 +188,11 @@ def amostras_por_ponto(formas):
     matriz_total = []
     i = 0
     #print(len(formas[0].p_derivada_norm[0]))
-    while i < len(formas[0].p_derivada_norm[0]):
+    while i < len(formas[0].p_derivada_norm):
         k = 0
         matriz_aux = []
         while k < len(formas):
-            matriz_aux.append(formas[k].p_derivada_norm[0][i])
+            matriz_aux.append(formas[k].p_derivada_norm[i])
             k = k + 1
         matriz_total.append(matriz_aux)
         i = i + 1
@@ -204,7 +204,7 @@ def pca_amostras(matriz, formas):
     arrays_formas = []
 
     p = 0
-    while p < len(formas[0].p_derivada_norm[0]):
+    while p < len(formas[0].p_derivada_norm):
         array_amostra = []
         for perfil in matriz[p]:
             for ponto in perfil:
@@ -269,30 +269,47 @@ def pca_amostras_texturas(matriz, formas):
 
 def primeira_derivada_texturas(forms):
     for forma in forms:
-        for vetor in forma.amostra:
+        for vetor in forma.amostra_text:
             #print("\n")
             i = 0
             lista_aux = []
             while i <= (len(vetor) - 1):
                 #print(vetor)
                 if i == (len(vetor) - 1):
-                    lista_aux.append(vetor[i] - vetor[0])
+                    lista_aux.append(int(vetor[i]) - int(vetor[0]))
                     #print(lista_aux)
                     forma.p_derivada.append(lista_aux)
                     lista_aux = []
                 else:
                     #print(np.array(vetor[i]), np.array(vetor[i+1]))
-                    lista_aux.append(vetor[i] - vetor[i+1])
+                    lista_aux.append(int(vetor[i]) - int(vetor[i+1]))
                 i += 1
 
+def primeira_derivada_texturas_estimativa(forma):
+    for vetor in forma.amostra_text:
+        #print("\n")
+        i = 0
+        lista_aux = []
+        while i <= (len(vetor) - 1):
+            #print(vetor)
+            if i == (len(vetor) - 1):
+                lista_aux.append(int(vetor[i]) - int(vetor[0]))
+                #print(lista_aux)
+                forma.p_derivada.append(lista_aux)
+                lista_aux = []
+            else:
+                #print(np.array(vetor[i]), np.array(vetor[i+1]))
+                lista_aux.append(int(vetor[i]) - int(vetor[i+1]))
+            i += 1
+
     
-def primeira_derivadada(formas):
-    formas_aux = []
+def primeira_derivada(formas):
+    #formas_aux = []
     vetor_aux = []
     i=0
     for forma in formas:
-        forma_aux = objeto.Forma()
-        forma_aux.pontos = forma.pontos
+        #forma_aux = objeto.Forma()
+        #forma_aux.pontos = forma.pontos
         img  = cv2.imread("images/" + forma.image, 0)
         img = np.array(img)
         for vetor in forma.amostra:
@@ -301,33 +318,32 @@ def primeira_derivadada(formas):
                 #print(ponto_aux)
                 #print("SHAPE", img.shape)
                 vetor_aux.append(ponto_aux)
-            forma_aux.amostra.append(vetor_aux)
+            forma.amostra_text.append(vetor_aux)
             vetor_aux = []
         #print(forma_aux.amostra)
-        formas_aux.append(forma_aux)
+        #formas_aux.append(forma_aux)
         i = i + 1
 
-    primeira_derivada_texturas(formas_aux)
+    primeira_derivada_texturas(formas)
 
-    print("AMOSTRA PRIMEIRA:")
-    print(formas_aux[0].p_derivada)
+    #print("AMOSTRA PRIMEIRA:")
+    #print(formas[0].p_derivada)
 
-    normalizar_amostras_textura(formas_aux)
+    normalizar_amostras_textura(formas)
 
-    print("AMOSTRA PRIMEIRA NORMALIZADA:")
-    print(np.array(formas_aux[0].p_derivada_norm))
+    #print("AMOSTRA PRIMEIRA NORMALIZADA:")
+    #print(np.array(formas[0].p_derivada_norm))
 
-    print("AMOSTRA PRIMEIRA NORMALIZADA:")
-    print(formas_aux[0].p_derivada_norm)
+    #print("MATRIZ TOTAL:")
+    texturas_matriz = np.array(amostras_por_ponto(formas))
+    #print(texturas_matriz)
 
-    print("MATRIZ TOTAL:")
-    texturas_matriz = np.array(amostras_por_ponto(formas_aux))
-    print(texturas_matriz)
+    #print("AUTOVETORES E AUTOVALORES:")
+    text_autovalores, text_autovetores = pca_amostras_texturas(texturas_matriz, formas)
+    #print(np.array(text_autovalores).shape, np.array(text_autovetores).shape)
+    
 
-    print("AUTOVETORES E AUTOVALORES:")
-    text_autovalores, text_autovetores = pca_amostras_texturas(texturas_matriz, formas_aux)
-    print(text_autovalores, text_autovetores)
-
+    '''
     for forma in formas:
         for vetor in forma.amostra:
             #print("\n")
@@ -351,7 +367,9 @@ def primeira_derivadada(formas):
     normalizar_amostras(formas)
     matriz = amostras_por_ponto(formas)
     autovalores, autovetores = pca_amostras(matriz, formas)
-    return autovalores, autovetores
+    '''
+
+    return text_autovalores, text_autovetores
 
 def normalizar_amostras(formas):
     for forma in formas:
@@ -370,12 +388,21 @@ def normalizar_amostras_textura(formas):
         lista_aux = []
         for vetor in forma.p_derivada:
             #print("\n")
-            lista_aux.append(normalizar(vetor)[0])
+            forma.p_derivada_norm.append(normalizar(vetor)[0])
         
-        forma.p_derivada_norm.append(np.array(lista_aux))
+        #forma.p_derivada_norm.append(np.array(lista_aux))
         #print("\n\n")
         #print(forma.p_derivada)
         #print("\n\n")
+
+def normalizar_amostras_textura_estimativa(forma):
+    lista_aux = []
+    for vetor in forma.p_derivada:
+        #print("\n")
+        forma.p_derivada_norm.append(normalizar(vetor)[0])
+    #print("\n\n")
+    #print(forma.p_derivada)
+    #print("\n\n")
 
 
 def amostras_textura(formas, d):
@@ -432,11 +459,14 @@ def amostras_textura(formas, d):
             forma.amostra.append(list_aux)
             i += 1
 
-    autovalores, autovetores = primeira_derivadada(formas)
+    autovalores, autovetores = primeira_derivada(formas)
 
     return autovalores, autovetores
 
 def amostra_forma(forma, d):
+    #print("é aqui mesmo")
+    #print("D", d)
+    #print("Forma", forma)
     i = 0
     amostra_centralizada = []
     while i < len(forma):
@@ -465,9 +495,10 @@ def amostra_forma(forma, d):
         #print(diferenca)
 
         p6 = np.array(p3) + diferenca
+        #p6 = [round(p6[0]), round(p6[1])]
         #p4 = np.array(p4) - diferenca
         #print("P4:", p4)
-        line = list(bresenham(p4[0], p4[1], p6[0], p6[1]))
+        line = list(bresenham(p4[0], p4[1], int(p6[0]), int(p6[1])))
         while len(line) <= d:
             p6 = np.array(p6) + diferenca
             p4 = np.array(p4) - diferenca
@@ -495,47 +526,48 @@ def amostra_forma(forma, d):
 
     return amostra_centralizada
 
-def ajuste_forma(estimativa, forma_media, magnitude, formas, autovalores, autovetores):
+def ajuste_forma(estimativa, forma_media, magnitude, form_autovalores, form_autovetores):
     #passo 1
-    autovetores = np.array(autovetores)
-    autovalores = np.array(autovalores)
-    print("AUTOVAL", autovalores)
-    print("AUTOVET", autovetores)
+    autovetores = np.array(form_autovetores)
+    autovalores = np.array(form_autovalores)
+    #print("AUTOVAL", autovalores)
+    #print("AUTOVET", autovetores)
     m = dist_procrustes(estimativa, forma_media)[1]
     #print(m)
     #print('\n\n')
     #print(estimativa)
     #passo 2
-    print(len(autovalores))
+    #print(len(autovalores))
     #print(autovetores)
     #print("\n\n")
     #print(autovetores.reshape(len(autovetores), 1))
     
     res_diff = np.array(m - forma_media)
-    print("PRINTANDO DIFF:")
-    print(res_diff)
+    #print("PRINTANDO DIFF:")
+    #print(res_diff)
     #print(res_diff.shape)
     
-    b = autovetores.T[1]*res_diff#Precisa mesmo ser a transposta?? Algo a ser testado.
+    b = autovetores.T[1]*res_diff#Utilizo a transposta porém não há como fzr a operação com a matriz!!
     b = np.array(b)
-    print("PRINTANDO B:\n")
-    print(autovalores)
-    print(res_diff.shape)
-    print(autovalores.shape)
-    print(b.shape)
-    print(b)
-    print("CABOU")
+    #print("PRINTANDO B:\n")
+    #print(autovalores)
+    #print(res_diff.shape)
+    #print(autovalores.shape)
+    #print(b.shape)
+    #print(b)
+    #print("CABOU")
     #b = (m - forma_media)
     #print(autovalores)
     #passo 3
     k = 0
-    peso = b #OBS: solução temporária enquanto não se resolve o problema
+    peso = b 
     #for i in autovalores:
         #i = float(i)
+    #print("AUTOVALORES DO AJUSTE", autovalores)
     result1 = 3*math.sqrt(autovalores[0])
     result2 = 3*math.sqrt(autovalores[1])
     for j in peso:
-        print("J",j)
+        #print("J",j)
         #print(abs(j))
         if abs(j[0]) >= result1:
             j[0] = result1
@@ -543,18 +575,165 @@ def ajuste_forma(estimativa, forma_media, magnitude, formas, autovalores, autove
             j[1] = result2
         #k += 1
     
-    print(b.shape)
+    #print(b.shape)
     #passo 4
     x_c = forma_media + (autovalores*b)
     forma_corrigida = x_c
-    print("FORMA CORRIGIDA:")
-    print(x_c)
+    #print("FORMA CORRIGIDA:")
+    #print(x_c)
     forma_ajustada = dist_procrustes(forma_corrigida, estimativa)[1]
     resultado_final = forma_ajustada*magnitude #Não estou fazendo com a inversa, algo a ser testado ainda
-    print("RESULTADO FINAL:")
+    #print("RESULTADO FINAL:")
     #resultado_final = arredondar(resultado_final)
-    print(resultado_final)
+    #print(resultado_final)
     return resultado_final
+
+def textura_do_candidato(index_inicial, index_final, perfil):
+    return np.array(perfil[index_inicial:(index_final+1)])
+
+
+def escolha_novo_ponto(perfil_ponto, text_autovalores, text_autovetores, k, l): #Por enquanto não levará em conta a parametrização
+    index_ponto = int(len(perfil_ponto)/2)
+    index_cand1 = index_ponto - 1
+    index_cand2 = index_ponto + 1
+    
+    texturas = []
+    resultados = []
+
+    #Calculando textura de todos os candidatos
+    i = index_ponto + ((k-1)/2)
+    j = index_ponto - ((k-1)/2)
+    #print("\ni e j",i, j)
+    texturas.append(textura_do_candidato(int(j),int(i),perfil_ponto))
+    i = int(len(perfil_ponto) - 3)
+    j = 0
+    #print("\ni e j",i, j)
+    texturas.append(textura_do_candidato(j,i,perfil_ponto))
+    i = int(len(perfil_ponto) - 1)
+    j = 2
+    #print("\ni e j",i, j)
+    texturas.append(textura_do_candidato(j,i,perfil_ponto))
+
+    #Fazendo o calculo da formula
+    for textura in texturas:
+        text_media = np.mean(textura)
+        text_diff = textura - text_media
+        #print("\ntextura", textura)
+        #print("\ntext_media", text_media)
+        #print("\nautovetores", np.array(text_autovetores[l][0]))#Apenas por que é só a primeira forma
+        #print("\ntext_diff", text_diff)
+        b = np.array(text_autovetores[l][0]).T*text_diff#Apenas para primeira forma
+        resultados.append(b)
+    
+
+    #Fazendo o somatorio
+    soma = 0
+    cand_selecionado = 0 
+    p = 0
+    soma_aux = 9999999999 #Tambem poderia ser utilizado o maxInt
+    atual = 1
+    #print("TEXT_AUTOVALORES", text_autovalores)
+    for b in resultados:
+        for coord in b:
+            soma = soma + (coord)**2/text_autovalores[p][0]
+            p = p + 1
+        #print("SOMA", soma)
+        #print("SOMA_AUX", soma_aux)
+        if soma < soma_aux:
+            cand_selecionado = atual
+            soma_aux = soma
+        atual = atual + 1
+        soma = 0
+        p = 0
+    
+    if cand_selecionado == 2:
+        return index_cand1
+    if cand_selecionado == 3:
+        return index_cand2
+
+    return index_ponto
+
+def etapa_de_busca(estimativa, text_autovalores, text_autovetores, k, forma_media, magnitude, form_autovalores, form_autovetores, formas):
+    #Pegar amostras de textura da estimativa centralizada
+    #print("ETAPA DE BUSCA:\n\n")
+    form_estimativa = objeto.Forma()
+    form_estimativa.pontos = estimativa
+    j = 0#Tam de amostras da estimativa
+    #Verifica se é impar ou par
+    #print("K", k)
+    if k%2 == 0:
+        j = k + 1
+    else:
+        j = k + 2
+    form_estimativa.amostra = amostra_forma(form_estimativa.pontos, j)
+
+    vetor_aux = []
+    i=0
+    
+    #Pegando a textura das amostras
+    img  = cv2.imread("images/" + formas[0].image, 0)#Fazendo apenas pra primeira imagem por enquanto
+    img = np.array(img)
+    for vetor in form_estimativa.amostra:
+        for ponto in vetor:
+            ponto_aux = img[ponto[1]][ponto[0]]
+            #print(ponto_aux)
+            #print("SHAPE", img.shape)
+            vetor_aux.append(ponto_aux)
+        form_estimativa.amostra_text.append(vetor_aux)
+        vetor_aux = []
+    #print(forma_aux.amostra)
+
+    primeira_derivada_texturas_estimativa(form_estimativa)
+    normalizar_amostras_textura_estimativa(form_estimativa)
+    #Gerar as novas localizações de pontos pra estimativa
+    i = 0
+    while True:
+        nova_forma = []
+        y = 0
+        #print("\nP_derivada_norm", form_estimativa.p_derivada_norm)
+        for perfil in form_estimativa.p_derivada_norm:
+            #print("Y", y)
+            nova_forma.append(list(form_estimativa.amostra[y][escolha_novo_ponto(perfil, text_autovalores, text_autovetores, k, y)]))
+            y = y + 1
+
+        #print("NOVA FORMA", nova_forma)
+        form_estimativa.pontos = np.array(nova_forma)
+        
+        
+        #Ajuste da forma
+        forma_ajustada = np.array(arredondar(ajuste_forma(form_estimativa.pontos, forma_media, magnitude, form_autovalores, form_autovetores)))
+        if (np.array_equal(forma_ajustada, form_estimativa.pontos)) == True:
+            #print("Deu padrao!")
+            #print("i", i)
+            return form_estimativa.pontos #Apenas pra ver se gera o resultado de uma imagem
+        form_estimativa.pontos = forma_ajustada
+        form_estimativa.amostra = amostra_forma(form_estimativa.pontos, j)
+
+        form_estimativa.amostra_text = []
+        form_estimativa.p_derivada = []
+        form_estimativa.p_derivada_norm = []
+
+        img  = cv2.imread("images/" + formas[0].image, 0)#Fazendo apenas pra primeira imagem por enquanto
+        img = np.array(img)
+        for vetor in form_estimativa.amostra:
+            for ponto in vetor:
+                ponto_aux = img[ponto[1]][ponto[0]]
+                #print(ponto_aux)
+                #print("SHAPE", img.shape)
+                vetor_aux.append(ponto_aux)
+            form_estimativa.amostra_text.append(vetor_aux)
+            vetor_aux = []
+
+        primeira_derivada_texturas_estimativa(form_estimativa)
+        normalizar_amostras_textura_estimativa(form_estimativa)
+        #print("P_DERIVADA_NORM", form_estimativa.p_derivada_norm)
+
+        if i > 15:
+            #print("Deu com 1000")
+            return form_estimativa.pontos #Apenas pra ver se gera o resultado de uma imagem
+        #print("Repetindo")
+        i = i + 1
+        
 
 
  

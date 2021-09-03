@@ -17,6 +17,7 @@ class PdiApp:
         self.path_texture = "images_texture/"
         self.path_proc = "proc_image/"
         self.path_proc_g = "proc_g_image/"
+        self.path_resultado_asm = "resultado_asm/"
         self.first_amostra = False
         self.images_lines = []
         self.formas = []
@@ -38,12 +39,14 @@ class PdiApp:
         self.magnitude = 0
         self.norm_mean = []
         self.norm_estimate = []
-        self.autovalores = []
-        self.autovetores = []
+        self.text_autovalores = []
+        self.text_autovetores = []
         self.forma_corrigida = []
         self.form_autovetores = []
         self.form_autovalores = []
         self.formas_alinhadas = []
+        self.resultado_final = []
+        self.k = 0
 
         menubar = Menu(Pdi)
         Pdi.config(menu=menubar)
@@ -279,7 +282,9 @@ class PdiApp:
             #print("\n\nANTES")
             #print(self.formas[0].pontos)
             self.formas_alinhadas, self.forma_align_generalizada, self.norm_estimate, self.norm_mean, self.magnitude, self.form_autovetores, self.form_autovalores = execute.plot_procrustes_generalizada(forma_aux, self.path_lines)
-            self.amostra_center = execute.amostra_forma(self.forma_align_generalizada)
+            #print("FORM_AUTOVALORES", self.form_autovalores)
+            #print("FORM_AUTOVETORES", self.form_autovetores)
+            #self.amostra_center = execute.amostra_forma(self.forma_align_generalizada, self.k)
             #print("\n\nDEPOIS")
             #print(self.formas[0].pontos)
             openNewImage_proc_generalizada(self.forma_align_generalizada)
@@ -301,7 +306,8 @@ class PdiApp:
 
         def do_texturas():
             if self.e2.get() != "":
-                self.autovalores, self.autovetores = execute.plot_amostras(self.formas, self.path_lines, int(self.e2.get()))
+                self.k = int(self.e2.get())
+                self.text_autovalores, self.text_autovetores = execute.plot_amostras(self.formas, self.path_lines, self.k)
                 self.tw.destroy()
                 self.first_amostra = True
                 show_amostras()
@@ -312,9 +318,35 @@ class PdiApp:
 
         def show_procrustes():
             openNewWindow_proc()
+
+        def openNewImage_resultado_asm(alinhado): 
+            self.nw_g = Toplevel(Pdi) 
+            self.nw_g.title("PDI - Resultado do ASM")  
+            self.nw_g.geometry("1200x700") 
+            #text=IntVar()
+            self.canvas_proc_g = Canvas(self.nw_g, width = 1366, height = 800, background="white")  
+            self.canvas_proc_g.pack()
+            img = ImageTk.PhotoImage(Image.open(self.path_resultado_asm + "resultado.jpg"))
+            label = Label(image=img)
+            label.image = img
+            self.canvas_image_proc_g = self.canvas_proc_g.create_image(80, 0, anchor=NW, image=label.image)
+            self.proc_g_text_g = self.canvas_proc_g.create_text(650, 40,fill="black",font="Arial 15 bold",
+                        text="Resultado ASM para a forma 1", anchor=W)
+
+            self.proc_g_text2 = self.canvas_proc_g.create_text(650, 70,fill="black",font="Arial 12 bold",
+                        text="Forma alinhada: ", anchor=W)
+            i=0
+            k=90
+            for ponto in alinhado:
+                k += 30
+                self.proc_g_texts.append(self.canvas_proc_g.create_text(650, k,fill="black",font="Arial 12 bold",
+                        text="Ponto " + str(i) +  ": " + str(ponto), anchor=W))
+                i+=1
+            #self.proc_g_flag = True
         
-        def show_forma_ajustada():
-            execute.ajuste_de_forma(self.norm_estimate, self.norm_mean, self.magnitude, self.formas, self.form_autovalores, self.form_autovetores)
+        def show_etapa_de_busca():
+            self.resultado_final  = execute.etapa_de_busca(self.forma_align_generalizada,self.text_autovalores, self.text_autovetores, self.k , self.norm_mean, self.magnitude, self.form_autovalores, self.form_autovetores, self.formas)
+            openNewImage_resultado_asm(self.resultado_final)
             
             
         menu.add_command(label='Ler arquivo', command=Plot)
@@ -324,7 +356,7 @@ class PdiApp:
         menu2.add_command(label='Distância Procrustes', command=show_procrustes)
         menu2.add_command(label='Distância Procrustes Generalizada', command=show_procrustes_generalized)
         menu2.add_command(label='Gerar Amostras de Textura', command=show_amostras_textura)
-        menu3.add_command(label='Ajuste de forma', command=show_forma_ajustada)
+        menu3.add_command(label='Etapa de busca', command=show_etapa_de_busca)
         
 
 Pdi = Tk()

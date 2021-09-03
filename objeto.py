@@ -10,8 +10,10 @@ class Forma:
         self.amostra = []
         self.p_derivada = []
         self.p_derivada_norm = []
-        self.autovalor = []
-        self.autovetor = []
+        self.text_autovalores = []
+        self.text_autovetores = []
+        self.amostra_text = []
+        self.estimativa_text_coords = []
 
     def setDados(self, imagem):
         count = 0

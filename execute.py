@@ -110,15 +110,22 @@ def salvar_forma_media(magnitude, m, formas):
     image = functions.plot_lines(proc_aux, path)
     cv2.imwrite("forma_media/mean_shape.jpg", image)
 
-def amostra_forma(m):
+'''
+def amostra_forma(m, k):
+        print("K", k)
+        if k%2 == 0:
+            j = k + 1
+        else:
+            j = k + 2
         amostra = operations.amostra_forma(m, 10)
         return amostra
+'''
 
-def ajuste_de_forma(estimativa, forma_media, magnitude, formas, autovalores, autovetores):
+def etapa_de_busca(estimativa, text_autovalores, text_autovetores, k, forma_media, magnitude, form_autovalores, form_autovetores, formas):
     path = "images/"
     resultado_aux = objeto.Forma()
 
-    forma_resultante = operations.ajuste_forma(estimativa, forma_media, magnitude, formas, autovalores, autovetores)
+    forma_resultante = operations.etapa_de_busca(estimativa, text_autovalores, text_autovetores, k, forma_media, magnitude, form_autovalores, form_autovetores, formas)
     resultado = []
     dadoaux = [0,0]
     for ponto in forma_resultante:
